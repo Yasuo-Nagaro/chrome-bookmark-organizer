@@ -58,7 +58,8 @@ def get_categories_batch(bookmark_batch, existing_categories):
     # ensure_ascii=False で日本語がエスケープされないようにする
     bookmarks_json_str = json.dumps(bookmarks_json_list, indent=2, ensure_ascii=False)
     
-    # バッチ処理専用のJSONレスポンスプロンプト
+    # バッチ処理用のプロンプト
+    nest = 3 # 階層数
     prompt = f"""
     あなたはブックマークの分類アシスタントです。
     以下の「既存のカテゴリスト」を参考に、指定された「ブックマークJSONリスト」を分類してください。
@@ -66,7 +67,7 @@ def get_categories_batch(bookmark_batch, existing_categories):
     # 最重要ルール
     - 回答は、必ず以下の形式のJSON配列のみを返してください。
     - 各オブジェクトには、入力と対応する「id」と、分類結果の「category」を含めてください。
-    - カテゴリは最大3階層です（例: '開発 > Python'）。
+    - カテゴリは最大{nest}階層です（例: '開発 > Python'）。
     - 既存カテゴリに合致するものを優先してください。
     - どのカテゴリにも分類が難しい場合は 'その他' としてください。
     - 回答にはJSON以外の余計なテキスト（"はい、承知しました..."など）を含めないでください。
@@ -106,7 +107,7 @@ def get_categories_batch(bookmark_batch, existing_categories):
         cleaned_results = []
         for res in results:
             if "category" in res and "id" in res:
-                parts = [part.strip() for part in res["category"].split('>') if part.strip()][:3]
+                parts = [part.strip() for part in res["category"].split('>') if part.strip()][:nest]
                 limited_category = ' > '.join(parts)
                 cleaned_results.append({
                     "id": res["id"],
